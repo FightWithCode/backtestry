@@ -1,0 +1,17 @@
+django==4.2.*
+djangorestframework
+whitenoise
+celery[redis]
+redis
+psycopg2-binary
+yfinance
+pandas
+pandas_ta
+numpy
+google-genai
+beautifulsoup4
+requests
+youtube-transcript-api
+duckduckgo-search
+python-dotenv
+django-environ
