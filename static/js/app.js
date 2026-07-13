@@ -7,6 +7,12 @@ const ROUTES = [
   { pattern: /^\/strategies\/?$/, page: StrategiesPage },
   { pattern: /^\/backtests\/([a-f0-9-]{36})$/, page: BacktestResultsPage, paramKey: 'id' },
   { pattern: /^\/backtests\/?$/, page: BacktestHistoryPage },
+  { pattern: /^\/lab\/new$/, page: LabNewPage },
+  { pattern: /^\/lab\/([a-f0-9-]{36})$/, page: LabResultsPage, paramKey: 'id' },
+  { pattern: /^\/lab\/?$/, page: LabListPage },
+  { pattern: /^\/screener\/new$/, page: ScreenerNewPage },
+  { pattern: /^\/screener\/([a-f0-9-]{36})$/, page: ScreenerResultsPage, paramKey: 'id' },
+  { pattern: /^\/screener\/?$/, page: ScreenerListPage },
 ];
 
 const App = {

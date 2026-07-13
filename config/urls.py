@@ -6,5 +6,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("apps.strategies.urls")),
     path("api/", include("apps.backtests.urls")),
+    path("api/", include("apps.lab.urls")),
+    path("api/", include("apps.screener.urls")),
     re_path(r"^(?!api/).*$", TemplateView.as_view(template_name="index.html")),
 ]

@@ -23,7 +23,7 @@ class BacktestRunListSerializer(serializers.ModelSerializer):
         fields = [
             "id", "strategy", "strategy_name",
             "symbols", "start_date", "end_date", "initial_capital",
-            "commission_pct", "slippage_pct",
+            "commission_pct", "slippage_pct", "timeframe",
             "script_version_used", "status", "error",
             "created_at", "completed_at",
         ]
@@ -32,13 +32,14 @@ class BacktestRunListSerializer(serializers.ModelSerializer):
 class BacktestRunDetailSerializer(serializers.ModelSerializer):
     results = BacktestResultSerializer(many=True, read_only=True)
     strategy_name = serializers.CharField(source="strategy.name", read_only=True)
+    strategy_timeframe = serializers.CharField(source="strategy.timeframe", read_only=True)
 
     class Meta:
         model = BacktestRun
         fields = [
-            "id", "strategy", "strategy_name",
+            "id", "strategy", "strategy_name", "strategy_timeframe",
             "symbols", "start_date", "end_date", "initial_capital",
-            "commission_pct", "slippage_pct",
+            "commission_pct", "slippage_pct", "timeframe",
             "script_version_used", "status", "error",
             "created_at", "completed_at", "results",
         ]
@@ -58,6 +59,17 @@ class BacktestCreateSerializer(serializers.Serializer):
     initial_capital = serializers.FloatField(default=100000, min_value=1)
     commission_pct = serializers.FloatField(default=0.0, min_value=0)
     slippage_pct = serializers.FloatField(default=0.0, min_value=0)
+    timeframe = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate_timeframe(self, value):
+        if not value:
+            return value
+        from apps.strategies.timeframe import TIMEFRAME_MAP
+        if value.lower().strip() not in TIMEFRAME_MAP:
+            raise serializers.ValidationError(
+                f"Unrecognized timeframe '{value}'. Use one of: {sorted(set(TIMEFRAME_MAP.values()))}"
+            )
+        return value
 
     def validate_symbols(self, value):
         """

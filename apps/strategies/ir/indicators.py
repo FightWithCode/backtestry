@@ -66,20 +66,28 @@ def _compute_one(ind_type: str, params: dict, open_, high, low, close, volume) -
         return ta.rsi(close, length=p["length"])
     if ind_type == "MACD":
         out = ta.macd(close, fast=p["fast"], slow=p["slow"], signal=p["signal"])
+        if out is None:
+            return None
         col = {"macd": 0, "signal": 1, "hist": 2}[p["component"]]
         return out.iloc[:, col]
     if ind_type == "BBANDS":
         out = ta.bbands(close, length=p["length"], std=p["std"])
+        if out is None:
+            return None
         col = {"lower": 0, "mid": 1, "upper": 2}[p["component"]]
         return out.iloc[:, col]
     if ind_type == "ATR":
         return ta.atr(high, low, close, length=p["length"])
     if ind_type == "ADX":
         out = ta.adx(high, low, close, length=p["length"])
+        if out is None:
+            return None
         col = {"adx": 0, "dmp": 1, "dmn": 2}[p["component"]]
         return out.iloc[:, col]
     if ind_type == "STOCH":
         out = ta.stoch(high, low, close, k=p["k"], d=p["d"], smooth_k=p["smooth_k"])
+        if out is None:
+            return None
         col = {"k": 0, "d": 1}[p["component"]]
         return out.iloc[:, col]
     if ind_type == "CCI":
@@ -88,6 +96,8 @@ def _compute_one(ind_type: str, params: dict, open_, high, low, close, volume) -
         return ta.obv(close, volume)
     if ind_type == "SUPERTREND":
         out = ta.supertrend(high, low, close, length=p["length"], multiplier=p["multiplier"])
+        if out is None:
+            return None
         # supertrend columns: [SUPERT_, SUPERTd_ (direction), SUPERTl_, SUPERTs_]
         col = 1 if p["component"] == "direction" else 0
         return out.iloc[:, col]
@@ -113,5 +123,15 @@ def compute_ir_indicators(df: pd.DataFrame, ir_indicators: list) -> dict:
         if ind_type not in INDICATOR_TYPES:
             raise ValueError(f"Unsupported indicator type '{ind_type}' for id '{ind_id}'")
         series = _compute_one(ind_type, decl.get("params", {}), open_, high, low, close, volume)
+        if series is None:
+            # pandas_ta returns None (not an all-NaN Series) when there isn't enough
+            # data to compute the indicator at all for the requested params — e.g.
+            # ADX(14) needs more bars than a short date range or a recently-listed
+            # symbol can provide. Surface that clearly instead of letting a bare
+            # scalar silently corrupt every downstream Series operation.
+            raise ValueError(
+                f"Not enough bars to compute {ind_type} (id '{ind_id}', params {decl.get('params', {})}) "
+                f"over this date range — try a longer date range or a shorter indicator length."
+            )
         series_by_id[ind_id] = pd.to_numeric(series, errors="coerce")
     return series_by_id

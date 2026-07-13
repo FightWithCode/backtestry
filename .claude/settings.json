@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node verify_tf.js)",
+      "Bash(taskkill //PID 20124 //F)",
+      "Bash(taskkill //PID 6640 //F)",
+      "Bash(rm -rf 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\node_modules' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\package.json' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\package-lock.json' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\verify_tf.js')",
+      "Bash(python manage.py makemigrations lab)",
+      "Bash(python manage.py makemigrations screener)",
+      "Bash(python manage.py shell -c ' *)",
+      "Bash(curl -s http://127.0.0.1:8000/api/screener/universes/)",
+      "Bash(python -c ' *)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/screener/runs/ -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s http://127.0.0.1:8000/api/screener/runs/7be6c374-818c-47c5-87c6-76734b16d4bd/status/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:8000/screener)",
+      "Bash(node verify_screener.js)",
+      "Bash(curl -s -X DELETE http://127.0.0.1:8000/api/screener/universes/7b46b1cd-67c7-4a5f-ae03-11224049ecfa/)",
+      "Bash(curl -s -X DELETE http://127.0.0.1:8000/api/screener/universes/ba6a72f3-2c87-4854-9845-08c970fec2ea/)",
+      "Bash(taskkill //PID 13888 //F)",
+      "Bash(rm -rf 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\node_modules' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\package.json' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\package-lock.json' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\verify_screener.js')",
+      "Bash(node verify_select.js)",
+      "Bash(taskkill //PID 10836 //F)",
+      "Bash(taskkill //PID 1348 //F)",
+      "Bash(rm -rf 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\node_modules' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\package.json' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\package-lock.json' 'C:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Admin-Desktop-Projects-TradingAgent2-0MonolithicClaude\\\\45d4eb57-3acd-47e6-b361-8a14da20f7f8\\\\scratchpad\\\\verify_select.js')"
+    ]
+  }
+}

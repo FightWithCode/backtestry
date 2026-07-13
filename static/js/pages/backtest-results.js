@@ -137,16 +137,23 @@ const BacktestResultsPage = {
 
     btContent.innerHTML = `
       <!-- Header -->
-      <div style="margin-bottom:24px;">
-        <h1 style="font-size:20px;font-weight:700;margin-bottom:6px;">${run.strategy_name || 'Backtest Results'}</h1>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--text-muted);">
-          <span>${(run.symbols || []).join(', ')}</span>
-          <span style="color:var(--border);">·</span>
-          <span>${run.start_date} → ${run.end_date}</span>
-          <span style="color:var(--border);">·</span>
-          <span>$${(run.initial_capital || 0).toLocaleString()}</span>
-          <span class="badge badge-completed">Completed</span>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:24px;">
+        <div>
+          <h1 style="font-size:20px;font-weight:700;margin-bottom:6px;">${run.strategy_name || 'Backtest Results'}</h1>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--text-muted);">
+            <span>${(run.symbols || []).join(', ')}</span>
+            <span style="color:var(--border);">·</span>
+            <span style="background:rgba(99,102,241,.12);color:#818cf8;padding:2px 8px;border-radius:5px;font-size:12px;font-weight:600;">${run.timeframe || run.strategy_timeframe || '—'}${run.timeframe ? ' (override)' : ''}</span>
+            <span style="color:var(--border);">·</span>
+            <span>${run.start_date} → ${run.end_date}</span>
+            <span style="color:var(--border);">·</span>
+            <span>$${(run.initial_capital || 0).toLocaleString()}</span>
+            <span class="badge badge-completed">Completed</span>
+          </div>
         </div>
+        <button onclick="BacktestResultsPage._confirmDelete()" class="btn-secondary" style="padding:5px 10px;color:#ef4444;border-color:rgba(239,68,68,.25);flex-shrink:0;" title="Delete backtest">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
       </div>
 
       <!-- Symbol tabs -->
@@ -261,6 +268,48 @@ const BacktestResultsPage = {
         DrawdownChart.render('drawdown-chart-canvas', result.drawdown_series);
       }
     });
+  },
+
+  _confirmDelete() {
+    const run = this._run;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);`;
+    overlay.innerHTML = `
+      <div class="card" style="padding:28px;max-width:380px;width:90%;animation:pageEnter .2s ease;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:36px;height:36px;background:rgba(239,68,68,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </div>
+          <h3 style="font-size:16px;font-weight:600;">Delete Backtest</h3>
+        </div>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:6px;">Are you sure you want to delete this backtest run?</p>
+        <p style="font-size:14px;color:#fff;font-weight:600;margin-bottom:20px;">${run.strategy_name || 'Strategy'} · ${(run.symbols || []).join(', ')}</p>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px;">This will permanently delete the run and all its results.</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="delete-bt-cancel-btn" class="btn-secondary" style="padding:8px 16px;">Cancel</button>
+          <button id="delete-bt-confirm-btn" class="btn-primary" style="padding:8px 16px;background:#ef4444;">Delete</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('delete-bt-cancel-btn').onclick = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    document.getElementById('delete-bt-confirm-btn').onclick = async () => {
+      const btn = document.getElementById('delete-bt-confirm-btn');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span> Deleting...`;
+      try {
+        await API.deleteBacktest(run.id);
+        overlay.remove();
+        Toast.success('Backtest deleted');
+        App.navigate('/backtests');
+      } catch (e) {
+        Toast.error('Failed to delete: ' + e.message);
+        overlay.remove();
+      }
+    };
   },
 
   _cleanup() {

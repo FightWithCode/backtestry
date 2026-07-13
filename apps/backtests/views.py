@@ -48,6 +48,7 @@ class BacktestListCreateView(APIView):
             initial_capital=data["initial_capital"],
             commission_pct=data["commission_pct"],
             slippage_pct=data["slippage_pct"],
+            timeframe=data["timeframe"],
             script_version_used=strategy.script_version,
             status="queued",
         )
@@ -73,6 +74,13 @@ class BacktestDetailView(APIView):
         if not run:
             return err("BacktestRun not found", status.HTTP_404_NOT_FOUND)
         return ok(BacktestRunDetailSerializer(run).data)
+
+    def delete(self, request, pk):
+        run = self._get_run(pk)
+        if not run:
+            return err("BacktestRun not found", status.HTTP_404_NOT_FOUND)
+        run.delete()
+        return ok({"deleted": True})
 
 
 class BacktestStatusView(APIView):

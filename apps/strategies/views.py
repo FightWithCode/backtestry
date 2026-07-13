@@ -9,6 +9,7 @@ from .serializers import (
     StrategyStatusSerializer,
     StrategyScriptHistorySerializer,
     StrategyCreateSerializer,
+    StrategyUpdateSerializer,
 )
 
 
@@ -70,6 +71,16 @@ class StrategyDetailView(APIView):
             return err("Strategy not found", status.HTTP_404_NOT_FOUND)
         return ok(StrategyDetailSerializer(strategy).data)
 
+    def patch(self, request, pk):
+        strategy = self._get_strategy(pk)
+        if not strategy:
+            return err("Strategy not found", status.HTTP_404_NOT_FOUND)
+        serializer = StrategyUpdateSerializer(strategy, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return err(str(serializer.errors))
+        serializer.save()
+        return ok(StrategyDetailSerializer(strategy).data)
+
     def delete(self, request, pk):
         strategy = self._get_strategy(pk)
         if not strategy:
@@ -104,6 +115,64 @@ class RegenerateScriptView(APIView):
         strategy.save(update_fields=["script_status"])
 
         return ok({"message": "Script regeneration started", "id": str(strategy.id)})
+
+
+class UpdateConfigView(APIView):
+    """Manually overwrite a strategy's backtest config (IR JSON or legacy)."""
+
+    def post(self, request, pk):
+        try:
+            strategy = Strategy.objects.get(pk=pk)
+        except Strategy.DoesNotExist:
+            return err("Strategy not found", status.HTTP_404_NOT_FOUND)
+
+        raw = request.data.get("backtest_script")
+        if not raw or not isinstance(raw, str):
+            return err("backtest_script (a JSON string) is required")
+
+        import json
+        try:
+            config = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            return err(f"Invalid JSON: {exc}")
+
+        if isinstance(config, dict) and "entries" in config and "indicators" in config:
+            from .ir.validate import validate_ir
+            errors = validate_ir(config)
+            if errors:
+                return err("Invalid strategy config: " + "; ".join(errors))
+
+        config_text = json.dumps(config)
+
+        from django.utils import timezone
+        if strategy.backtest_script:
+            StrategyScriptHistory.objects.create(
+                strategy=strategy,
+                script=strategy.backtest_script,
+                version=strategy.script_version,
+                reason="manual_edit",
+            )
+
+        strategy.backtest_script = config_text
+        strategy.script_version += 1
+        strategy.script_generated_at = timezone.now()
+        strategy.script_status = "generated"
+        strategy.script_error = None
+        strategy.save(
+            update_fields=[
+                "backtest_script", "script_version",
+                "script_generated_at", "script_status", "script_error",
+            ]
+        )
+
+        StrategyScriptHistory.objects.create(
+            strategy=strategy,
+            script=config_text,
+            version=strategy.script_version,
+            reason="manual_edit",
+        )
+
+        return ok(StrategyDetailSerializer(strategy).data)
 
 
 class ScriptHistoryView(APIView):

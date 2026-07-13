@@ -29,6 +29,8 @@
 
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- chartjs-plugin-zoom — only wired up by the Lab module's chart components -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -229,6 +231,14 @@
     .input-base:focus { border-color: var(--indigo); }
     .input-base::placeholder { color: var(--text-muted); }
 
+    /* <select> dropdown popups render with the browser's native (usually white)
+       background regardless of .input-base's own styling — <option> needs its
+       own explicit colors or the open list is unreadable against the dark theme. */
+    select.input-base option {
+      background: var(--card);
+      color: var(--text-primary);
+    }
+
     /* Button base */
     .btn-primary {
       background: var(--indigo); color: #fff; border: none;
@@ -274,6 +284,8 @@
       <a data-link href="/" class="nav-link px-3 py-1.5 rounded-lg text-sm" style="color:var(--text-muted);text-decoration:none;transition:color .2s;">Dashboard</a>
       <a data-link href="/strategies" class="nav-link px-3 py-1.5 rounded-lg text-sm" style="color:var(--text-muted);text-decoration:none;transition:color .2s;">Strategies</a>
       <a data-link href="/backtests" class="nav-link px-3 py-1.5 rounded-lg text-sm" style="color:var(--text-muted);text-decoration:none;transition:color .2s;">Backtests</a>
+      <a data-link href="/lab" class="nav-link px-3 py-1.5 rounded-lg text-sm" style="color:var(--text-muted);text-decoration:none;transition:color .2s;">Lab</a>
+      <a data-link href="/screener" class="nav-link px-3 py-1.5 rounded-lg text-sm" style="color:var(--text-muted);text-decoration:none;transition:color .2s;">Screener</a>
       <a data-link href="/strategies/new" class="btn-primary ml-2" style="padding:7px 14px;font-size:13px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New Strategy
@@ -299,12 +311,20 @@
 <script src="{% static 'js/components/equity-chart.js' %}"></script>
 <script src="{% static 'js/components/drawdown-chart.js' %}"></script>
 <script src="{% static 'js/components/trade-log-table.js' %}"></script>
+<script src="{% static 'js/components/lab-price-chart.js' %}"></script>
+<script src="{% static 'js/components/lab-compare-chart.js' %}"></script>
 <script src="{% static 'js/pages/dashboard.js' %}"></script>
 <script src="{% static 'js/pages/strategies.js' %}"></script>
 <script src="{% static 'js/pages/strategy-detail.js' %}"></script>
 <script src="{% static 'js/pages/new-strategy.js' %}"></script>
 <script src="{% static 'js/pages/backtest-results.js' %}"></script>
 <script src="{% static 'js/pages/backtest-history.js' %}"></script>
+<script src="{% static 'js/pages/lab-list.js' %}"></script>
+<script src="{% static 'js/pages/lab-new.js' %}"></script>
+<script src="{% static 'js/pages/lab-results.js' %}"></script>
+<script src="{% static 'js/pages/screener-list.js' %}"></script>
+<script src="{% static 'js/pages/screener-new.js' %}"></script>
+<script src="{% static 'js/pages/screener-results.js' %}"></script>
 <script src="{% static 'js/app.js' %}"></script>
 
 </body>

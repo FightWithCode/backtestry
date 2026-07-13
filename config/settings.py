@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.strategies",
     "apps.backtests",
+    "apps.lab",
+    "apps.screener",
 ]
 
 MIDDLEWARE = [

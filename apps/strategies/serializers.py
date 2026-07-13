@@ -64,6 +64,21 @@ class StrategyStatusSerializer(serializers.ModelSerializer):
         fields = ["id", "script_status", "script_error", "script_version"]
 
 
+class StrategyUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Strategy
+        fields = [
+            "name", "description", "timeframe",
+            "entry_rules", "exit_rules", "indicators", "candle_patterns",
+        ]
+        extra_kwargs = {field: {"required": False} for field in fields}
+
+    def validate_name(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Name cannot be blank.")
+        return value.strip()
+
+
 class StrategyCreateSerializer(serializers.Serializer):
     source_type = serializers.ChoiceField(choices=["youtube", "webpage", "keyword", "text"])
     source_url = serializers.URLField(required=False, allow_blank=True)

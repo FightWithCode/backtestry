@@ -119,7 +119,7 @@ def run_backtest_task(self, backtest_run_id: str):
             raise ValueError(f"Strategy '{strategy.name}' has no backtest config")
 
         config   = json.loads(strategy.backtest_script)
-        interval = resolve_timeframe(strategy.timeframe)
+        interval = resolve_timeframe(run.timeframe or strategy.timeframe)
         is_ir    = "entries" in config and "indicators" in config
 
         if is_ir:
@@ -130,8 +130,9 @@ def run_backtest_task(self, backtest_run_id: str):
             path_label = "B (structured conditions)"
 
         logger.info(
-            "BacktestRun %s — timeframe='%s' → interval='%s'  path=%s",
-            backtest_run_id, strategy.timeframe, interval, path_label,
+            "BacktestRun %s — timeframe='%s'%s → interval='%s'  path=%s",
+            backtest_run_id, run.timeframe or strategy.timeframe,
+            "" if run.timeframe else " (strategy default)", interval, path_label,
         )
 
         succeeded, failed_symbols = 0, []

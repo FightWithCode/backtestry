@@ -50,6 +50,9 @@ const StrategyDetailPage = {
               <h1 style="font-size:22px;font-weight:700;">${s.name}</h1>
               <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <span class="badge badge-${s.script_status}">${s.script_status.replace('_',' ')}</span>
+                <button onclick="StrategyDetailPage._openEditModal()" class="btn-secondary" style="padding:5px 10px;" title="Edit strategy">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
                 <button onclick="StrategyDetailPage._confirmDelete()" class="btn-secondary" style="padding:5px 10px;color:#ef4444;border-color:rgba(239,68,68,.25);" title="Delete strategy">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                 </button>
@@ -152,11 +155,18 @@ const StrategyDetailPage = {
           <span style="font-size:13px;color:var(--text-muted);">
             ${s.script_generated_at ? `Generated ${new Date(s.script_generated_at).toLocaleString()}` : ''}
           </span>
-          <button class="btn-secondary" style="font-size:12px;gap:5px;" onclick="StrategyDetailPage._regenerate()" id="regen-btn"
-            ${s.script_status === 'generating' ? 'disabled' : ''}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            Regenerate
-          </button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" style="font-size:12px;gap:5px;" onclick="StrategyDetailPage._toggleConfigEdit()" id="edit-config-btn"
+              ${s.script_status === 'generating' || !s.backtest_script ? 'disabled' : ''}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+            <button class="btn-secondary" style="font-size:12px;gap:5px;" onclick="StrategyDetailPage._regenerate()" id="regen-btn"
+              ${s.script_status === 'generating' ? 'disabled' : ''}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Regenerate
+            </button>
+          </div>
         </div>
         <div id="script-panel">${ScriptViewer.render(s.backtest_script)}</div>
       `;
@@ -194,6 +204,62 @@ const StrategyDetailPage = {
     }
   },
 
+  _toggleConfigEdit() {
+    const s = this._strategy;
+    const panel = document.getElementById('script-panel');
+    if (!panel) return;
+
+    let formatted = s.backtest_script || '';
+    try { formatted = JSON.stringify(JSON.parse(s.backtest_script), null, 2); } catch (_) {}
+
+    panel.innerHTML = `
+      <textarea id="config-editor" class="input-base" spellcheck="false"
+        style="font-family:'SF Mono',Consolas,monospace;font-size:12.5px;line-height:1.6;width:100%;min-height:420px;resize:vertical;padding:14px;">${formatted.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+      <div id="config-edit-error" style="display:none;font-size:12px;color:#f87171;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:8px 12px;margin-top:10px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+        <button class="btn-secondary" style="padding:7px 14px;font-size:13px;" onclick="StrategyDetailPage._cancelConfigEdit()">Cancel</button>
+        <button class="btn-primary" style="padding:7px 14px;font-size:13px;" id="save-config-btn" onclick="StrategyDetailPage._saveConfig()">Save Config</button>
+      </div>
+    `;
+
+    document.getElementById('edit-config-btn')?.setAttribute('disabled', 'true');
+    document.getElementById('regen-btn')?.setAttribute('disabled', 'true');
+  },
+
+  _cancelConfigEdit() {
+    this._renderTab('config');
+  },
+
+  async _saveConfig() {
+    const textarea = document.getElementById('config-editor');
+    const errorBox = document.getElementById('config-edit-error');
+    const raw = textarea.value;
+
+    try {
+      JSON.parse(raw);
+    } catch (e) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'Invalid JSON: ' + e.message;
+      return;
+    }
+
+    const btn = document.getElementById('save-config-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Saving...`;
+    errorBox.style.display = 'none';
+
+    try {
+      this._strategy = await API.updateConfig(this._strategy.id, raw);
+      Toast.success('Config updated');
+      this._renderTab('config');
+    } catch (e) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = e.message;
+      btn.disabled = false;
+      btn.innerHTML = 'Save Config';
+    }
+  },
+
   _renderBacktestCard() {
     const s = this._strategy;
     const disabled = s.script_status !== 'generated';
@@ -209,9 +275,12 @@ const StrategyDetailPage = {
 
         ${disabled ? `<div style="font-size:12px;color:var(--text-muted);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px 12px;margin-bottom:14px;">Config must be generated before running a backtest.</div>` : ''}
 
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:8px 12px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:6px;">
-          <span style="font-size:12px;color:var(--text-muted);">Timeframe</span>
-          <span style="font-size:12px;font-weight:600;color:#818cf8;">${s.timeframe || '—'}</span>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;">Timeframe</label>
+          <select class="input-base" id="bt-timeframe" style="font-size:13px;padding:8px 12px;" ${disabled ? 'disabled' : ''}>
+            ${['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1wk', '1mo'].map(tf => `<option value="${tf}" ${s.timeframe === tf ? 'selected' : ''}>${tf}${s.timeframe === tf ? ' (strategy default)' : ''}</option>`).join('')}
+          </select>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">Runs the same rules on different candle sizes — indicator lengths (e.g. RSI 5) stay in bars, so results will differ from the strategy's native timeframe. Intraday intervals are limited to the last 59 days of history.</div>
         </div>
 
         <div style="margin-bottom:12px;">
@@ -304,6 +373,7 @@ const StrategyDetailPage = {
     const start = document.getElementById('bt-start')?.value;
     const end = document.getElementById('bt-end')?.value;
     const capital = parseFloat(document.getElementById('bt-capital')?.value);
+    const timeframe = document.getElementById('bt-timeframe')?.value;
 
     if (!start || !end) { Toast.warning('Select date range'); return; }
 
@@ -318,6 +388,7 @@ const StrategyDetailPage = {
         start_date: start,
         end_date: end,
         initial_capital: capital || 100000,
+        timeframe: timeframe && timeframe !== this._strategy.timeframe ? timeframe : '',
       });
       Toast.success('Backtest queued!');
       App.navigate('/backtests/' + run.id);
@@ -357,6 +428,99 @@ const StrategyDetailPage = {
         }
       } catch (e) {}
     }, 5000);
+  },
+
+  _openEditModal() {
+    const s = this._strategy;
+    const timeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1wk', '1mo'];
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px;`;
+    overlay.innerHTML = `
+      <div class="card" style="padding:28px;max-width:560px;width:100%;max-height:85vh;overflow:auto;animation:pageEnter .2s ease;">
+        <h3 style="font-size:16px;font-weight:600;margin-bottom:18px;">Edit Strategy</h3>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;">Name</label>
+          <input class="input-base" id="edit-name" value="${(s.name || '').replace(/"/g, '&quot;')}" style="font-size:13px;padding:8px 12px;" />
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;">Timeframe</label>
+          <select class="input-base" id="edit-timeframe" style="font-size:13px;padding:8px 12px;">
+            ${timeframes.map(tf => `<option value="${tf}" ${s.timeframe === tf ? 'selected' : ''}>${tf}</option>`).join('')}
+          </select>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;">Description</label>
+          <textarea class="input-base" id="edit-description" rows="3" style="font-size:13px;padding:8px 12px;resize:vertical;">${s.description || ''}</textarea>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;">Entry Rules <span style="opacity:.6;">(one per line)</span></label>
+          <textarea class="input-base" id="edit-entry-rules" rows="4" style="font-size:13px;padding:8px 12px;resize:vertical;">${(s.entry_rules || []).join('\n')}</textarea>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;">Exit Rules <span style="opacity:.6;">(one per line)</span></label>
+          <textarea class="input-base" id="edit-exit-rules" rows="4" style="font-size:13px;padding:8px 12px;resize:vertical;">${(s.exit_rules || []).join('\n')}</textarea>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;">Indicators <span style="opacity:.6;">(comma-separated)</span></label>
+          <input class="input-base" id="edit-indicators" value="${(s.indicators || []).join(', ')}" style="font-size:13px;padding:8px 12px;" />
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px;">Candle Patterns <span style="opacity:.6;">(comma-separated)</span></label>
+          <input class="input-base" id="edit-candle-patterns" value="${(s.candle_patterns || []).join(', ')}" style="font-size:13px;padding:8px 12px;" />
+        </div>
+
+        <div style="font-size:12px;color:var(--text-muted);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px 12px;margin-bottom:20px;">
+          Editing rules, indicators, or timeframe only updates the stored description — hit <strong>Regenerate</strong> on the Config tab afterward to rebuild the backtest logic from your changes.
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="edit-cancel-btn" class="btn-secondary" style="padding:8px 16px;">Cancel</button>
+          <button id="edit-save-btn" class="btn-primary" style="padding:8px 16px;">Save Changes</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('edit-cancel-btn').onclick = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    document.getElementById('edit-save-btn').onclick = async () => {
+      const name = document.getElementById('edit-name').value.trim();
+      if (!name) { Toast.warning('Name cannot be blank'); return; }
+
+      const payload = {
+        name,
+        timeframe: document.getElementById('edit-timeframe').value,
+        description: document.getElementById('edit-description').value.trim(),
+        entry_rules: document.getElementById('edit-entry-rules').value.split('\n').map(r => r.trim()).filter(Boolean),
+        exit_rules: document.getElementById('edit-exit-rules').value.split('\n').map(r => r.trim()).filter(Boolean),
+        indicators: document.getElementById('edit-indicators').value.split(',').map(r => r.trim()).filter(Boolean),
+        candle_patterns: document.getElementById('edit-candle-patterns').value.split(',').map(r => r.trim()).filter(Boolean),
+      };
+
+      const btn = document.getElementById('edit-save-btn');
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span> Saving...`;
+      try {
+        this._strategy = await API.updateStrategy(s.id, payload);
+        overlay.remove();
+        Toast.success('Strategy updated');
+        const container = document.getElementById('detail-content')?.parentElement;
+        if (container) this._renderFull(container);
+      } catch (e) {
+        Toast.error('Failed to save: ' + e.message);
+        btn.disabled = false;
+        btn.innerHTML = 'Save Changes';
+      }
+    };
   },
 
   _confirmDelete() {
