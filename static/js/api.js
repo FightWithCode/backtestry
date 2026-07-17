@@ -85,4 +85,9 @@ const API = {
   getScreenerRunStatus: (id) => _request('GET', `/api/screener/runs/${id}/status/`),
 
   deleteScreenerRun: (id) => _request('DELETE', `/api/screener/runs/${id}/`),
+
+  // Settings (runtime-editable, no server restart needed)
+  getDataProviderSettings: () => _request('GET', '/api/settings/data-provider/'),
+
+  updateDataProviderSettings: (data) => _request('PATCH', '/api/settings/data-provider/', data),
 };

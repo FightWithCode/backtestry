@@ -8,7 +8,7 @@ AI-powered trading strategy backtesting platform. Paste a YouTube video, webpage
 - **Celery + Redis** — async scraping and backtesting tasks
 - **Gemini 2.5 Flash** — strategy extraction and script generation (called once per strategy)
 - **RestrictedPython sandbox** — safe execution of AI-generated scripts
-- **yfinance** — OHLCV data for any symbol
+- **yfinance** (default) or **Upstox v3** — OHLCV data for backtesting, screening, and lab runs, switchable via `DATA_PROVIDER`
 - **Vanilla JS SPA** — client-side routing, no build step, no npm
 
 ## Setup
@@ -94,6 +94,7 @@ All responses: `{ "success": bool, "data": any, "error": str|null }`
 
 ## Notes
 
-- **Intraday intervals** (5m, 15m, 1h): yfinance limits lookback to 60 days. Start dates are clamped automatically.
+- **Intraday intervals** (5m, 15m, 1h): yfinance limits lookback to 60 days; Upstox limits vary by interval (1 month for ≤15min, 1 quarter for 30m/1h/4h, 1 decade for daily — see `apps/backtests/upstox_client.py`). Start dates are clamped automatically either way.
 - **Script regeneration**: Re-runs Gemini on the stored strategy data (no re-scraping). Previous scripts are archived in StrategyScriptHistory.
 - **No CORS needed**: Frontend and API are served from the same Django process.
+- **Upstox data provider**: set `DATA_PROVIDER=upstox` and `UPSTOX_ACCESS_TOKEN` in `.env` to fetch OHLCV from Upstox v3 instead of yfinance. Upstox only covers NSE/BSE — symbols use the same `SYMBOL.NS` / `SYMBOL.BO` convention and are resolved to Upstox instrument keys automatically via its daily instrument master file. Access tokens expire daily around 3:30am IST and must be refreshed via Upstox's OAuth login flow.

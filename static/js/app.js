@@ -13,6 +13,7 @@ const ROUTES = [
   { pattern: /^\/screener\/new$/, page: ScreenerNewPage },
   { pattern: /^\/screener\/([a-f0-9-]{36})$/, page: ScreenerResultsPage, paramKey: 'id' },
   { pattern: /^\/screener\/?$/, page: ScreenerListPage },
+  { pattern: /^\/settings\/?$/, page: SettingsPage },
 ];
 
 const App = {

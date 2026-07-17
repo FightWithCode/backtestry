@@ -1,5 +1,6 @@
 import json
 import re
+import anthropic
 from django.conf import settings
 from google import genai
 
@@ -9,6 +10,7 @@ from apps.strategies.ir.schema import (
 from apps.strategies.ir.validate import validate_ir
 
 MODEL_NAME = "gemini-2.5-flash"
+CLAUDE_MODEL_NAME = "claude-opus-4-8"
 
 EXTRACT_SYSTEM_PROMPT = """You are a trading strategy extractor. The input text may be in any language — understand it regardless of language. The input may be a YouTube transcript, webpage text, or the actual source code of the strategy (e.g. a Pine Script indicator/strategy) — read whichever form is given.
 
@@ -150,6 +152,36 @@ def _call_gemini(prompt: str) -> str:
     return response.text.strip()
 
 
+def _call_claude(prompt: str) -> str:
+    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    with client.messages.stream(
+        model=CLAUDE_MODEL_NAME,
+        max_tokens=16000,
+        thinking={"type": "adaptive"},
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        message = stream.get_final_message()
+    return "".join(block.text for block in message.content if block.type == "text").strip()
+
+
+def _call_llm(prompt: str) -> str:
+    providers = {
+        "gemini": ("GEMINI_API_KEY", _call_gemini),
+        "claude": ("ANTHROPIC_API_KEY", _call_claude),
+    }
+    primary = settings.LLM_PROVIDER.lower()
+    if primary not in providers:
+        raise ValueError(f"Unknown LLM_PROVIDER {primary!r} — expected one of {sorted(providers)}")
+    fallback = next(name for name in providers if name != primary)
+    try:
+        return providers[primary][1](prompt)
+    except Exception:
+        fallback_key, fallback_call = providers[fallback]
+        if not getattr(settings, fallback_key):
+            raise
+        return fallback_call(prompt)
+
+
 def _parse_json(text: str) -> dict:
     text = re.sub(r"^```[a-zA-Z]*\n?", "", text.strip())
     text = re.sub(r"\n?```$", "", text.strip())
@@ -163,7 +195,7 @@ def extract_strategy_details(raw_text: str) -> dict:
     candle_patterns, entry_rules, exit_rules, step_wise_process.
     """
     prompt = f"{EXTRACT_SYSTEM_PROMPT}\n\nRaw input:\n{raw_text[:12000]}"
-    return _parse_json(_call_gemini(prompt))
+    return _parse_json(_call_llm(prompt))
 
 
 def extract_strategy_config(structured_details: dict) -> dict:
@@ -177,7 +209,7 @@ def extract_strategy_config(structured_details: dict) -> dict:
     """
     details_json = json.dumps(structured_details, indent=2)
     prompt = f"{CONFIG_SYSTEM_PROMPT}\n\nStrategy details:\n{details_json}"
-    config = _parse_json(_call_gemini(prompt))
+    config = _parse_json(_call_llm(prompt))
 
     errors = validate_ir(config)
     if errors:

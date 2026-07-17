@@ -30,6 +30,20 @@ def _parse_symbols(raw: list) -> list[str]:
 
 
 def _fetch_ohlcv(symbol: str, start_date, end_date, interval: str):
+    """
+    Fetch OHLCV for `symbol` from whichever provider DATA_PROVIDER selects
+    ("yfinance" (default) or "upstox"). Shared by backtests, screener, and lab
+    so all three switch providers together.
+    """
+    from apps.appsettings.models import get_data_provider
+    provider = get_data_provider().lower()
+    if provider == "upstox":
+        from .upstox_client import fetch_candles
+        return fetch_candles(symbol, start_date, end_date, interval)
+    return _fetch_ohlcv_yfinance(symbol, start_date, end_date, interval)
+
+
+def _fetch_ohlcv_yfinance(symbol: str, start_date, end_date, interval: str):
     import yfinance as yf
     import pandas as pd
 

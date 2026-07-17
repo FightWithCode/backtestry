@@ -10,6 +10,10 @@ env = environ.Env(
     DATABASE_URL=(str, "postgresql://user:pass@localhost:5432/tradingagent"),
     REDIS_URL=(str, "redis://localhost:6379/0"),
     GEMINI_API_KEY=(str, ""),
+    ANTHROPIC_API_KEY=(str, ""),
+    LLM_PROVIDER=(str, "gemini"),
+    DATA_PROVIDER=(str, "yfinance"),
+    UPSTOX_ACCESS_TOKEN=(str, ""),
 )
 
 env_file = BASE_DIR / ".env"
@@ -33,6 +37,7 @@ INSTALLED_APPS = [
     "apps.backtests",
     "apps.lab",
     "apps.screener",
+    "apps.appsettings",
 ]
 
 MIDDLEWARE = [
@@ -114,6 +119,13 @@ CELERY_TIMEZONE = "UTC"
 
 # Gemini
 GEMINI_API_KEY = env("GEMINI_API_KEY")
+ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
+LLM_PROVIDER = env("LLM_PROVIDER")
+
+# OHLCV data source for backtesting/screening — "yfinance" (default, global) or
+# "upstox" (NSE/BSE only, requires a daily-refreshed access token; see apps/backtests/upstox_client.py)
+DATA_PROVIDER = env("DATA_PROVIDER")
+UPSTOX_ACCESS_TOKEN = env("UPSTOX_ACCESS_TOKEN")
 
 # DRF
 REST_FRAMEWORK = {
