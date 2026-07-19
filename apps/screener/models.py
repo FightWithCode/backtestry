@@ -4,16 +4,26 @@ from apps.strategies.models import Strategy
 
 
 class ScreenerUniverse(models.Model):
+    GROUP_TYPES = [
+        ("", "Custom"),
+        ("market_cap", "Market Cap"),
+        ("sector", "Sector"),
+        ("fno", "F&O Enabled"),
+        ("combined", "Combined"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     name = models.CharField(max_length=255)
     symbols = models.JSONField(default=list)
     description = models.TextField(blank=True)
+    sector = models.CharField(max_length=100, blank=True, default="")
+    group_type = models.CharField(max_length=20, choices=GROUP_TYPES, blank=True, default="")
     is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-is_default", "name"]
+        ordering = ["-is_default", "group_type", "sector", "name"]
 
     def __str__(self):
         return f"{self.name} ({len(self.symbols)} symbols)"

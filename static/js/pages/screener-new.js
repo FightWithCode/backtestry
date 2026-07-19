@@ -39,7 +39,12 @@ const ScreenerNewPage = {
             <select class="input-base" id="scr-universe" style="font-size:13px;padding:9px 12px;">
               <option value="">Loading universes...</option>
             </select>
-            <textarea class="input-base" id="scr-symbols" rows="5" style="display:none;font-size:12px;font-family:monospace;padding:8px 10px;margin-top:8px;" placeholder="RELIANCE, TCS, INFY&#10;(comma or newline separated — .NS added automatically)"></textarea>
+            <div id="scr-symbols-wrap" style="display:none;margin-top:8px;">
+              <div style="display:flex;justify-content:flex-end;margin-bottom:5px;">
+                <button type="button" class="btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="ScreenerNewPage._clearSymbols()">Clear</button>
+              </div>
+              <textarea class="input-base" id="scr-symbols" rows="5" style="font-size:12px;font-family:monospace;padding:8px 10px;" placeholder="RELIANCE, TCS, INFY&#10;(comma or newline separated — bare NSE symbols; a trailing .NS/.BO is stripped automatically)"></textarea>
+            </div>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
@@ -86,9 +91,7 @@ const ScreenerNewPage = {
         : `<option value="">No generated strategies available</option>`;
 
       const uniSelect = document.getElementById('scr-universe');
-      uniSelect.innerHTML = universes.length
-        ? universes.map(u => `<option value="${u.id}">${u.name} (${u.symbol_count})</option>`).join('')
-        : `<option value="">No universes yet — use a custom list</option>`;
+      uniSelect.innerHTML = UniversePicker.optionsHtml(universes, 'Select a universe...');
 
       this._updateSubmitState();
     } catch (e) {
@@ -108,8 +111,13 @@ const ScreenerNewPage = {
   _toggleCustom(checked) {
     this._useCustomSymbols = checked;
     document.getElementById('scr-universe').style.display = checked ? 'none' : '';
-    document.getElementById('scr-symbols').style.display = checked ? '' : 'none';
+    document.getElementById('scr-symbols-wrap').style.display = checked ? '' : 'none';
     this._updateSubmitState();
+  },
+
+  _clearSymbols() {
+    const el = document.getElementById('scr-symbols');
+    if (el) el.value = '';
   },
 
   _updateSubmitState() {

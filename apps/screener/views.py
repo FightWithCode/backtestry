@@ -15,9 +15,20 @@ from .serializers import (
     ScreenerRunStatusSerializer,
     ScreenerCreateSerializer,
 )
-from .default_universe import DEFAULT_UNIVERSE_SYMBOLS
+from .default_universe import NSE_UNIVERSE, FNO_ENABLED_SYMBOLS, TIER_LABELS, BY_TIER, BY_SECTOR, ALL_SYMBOLS
 
 MAX_SYMBOLS_PER_RUN = 750
+
+_STARTER_CAVEAT = (
+    "Sourced from NSE Indices' official Nifty 100 / Midcap 150 / Smallcap 250 constituent "
+    "lists and Upstox's live NSE instrument master (see apps/screener/default_universe.py). "
+    "Both are point-in-time snapshots — NSE reconstitutes these indices periodically — so "
+    "edit or replace before relying on results long after this was generated."
+)
+_FNO_CAVEAT = _STARTER_CAVEAT + (
+    " F&O eligibility here is read directly off Upstox's live NSE_FO instrument list (every "
+    "symbol with an active futures/options contract right now), not estimated."
+)
 
 
 def ok(data):
@@ -43,19 +54,64 @@ def _load_ir_config(strategy):
     return config, None
 
 
-class UniverseListCreateView(APIView):
-    def get(self, request):
-        if not ScreenerUniverse.objects.exists():
+def _seed_default_universes():
+    """
+    Idempotent: creates any built-in universe that doesn't already exist yet,
+    keyed on (group_type, sector) rather than name — so renaming a seeded
+    universe doesn't cause it to be recreated, but a newly-added sector/tier
+    in default_universe.py still appears for existing installs without a
+    manual migration/script.
+    """
+    existing = set(
+        ScreenerUniverse.objects.filter(is_default=True).values_list("group_type", "sector")
+    )
+
+    if ("combined", "") not in existing:
+        ScreenerUniverse.objects.create(
+            name="NSE — All (Large + Mid + Small Cap)",
+            symbols=ALL_SYMBOLS,
+            description=_STARTER_CAVEAT,
+            group_type="combined",
+            sector="",
+            is_default=True,
+        )
+
+    if ("fno", "") not in existing:
+        ScreenerUniverse.objects.create(
+            name="NSE — F&O Enabled",
+            symbols=FNO_ENABLED_SYMBOLS,
+            description=_FNO_CAVEAT,
+            group_type="fno",
+            sector="",
+            is_default=True,
+        )
+
+    for tier, label in TIER_LABELS.items():
+        if ("market_cap", tier) not in existing:
             ScreenerUniverse.objects.create(
-                name="NSE Mid/Small Cap — Starter List",
-                symbols=DEFAULT_UNIVERSE_SYMBOLS,
-                description=(
-                    "Example universe shipped with the screener — not a verified, current "
-                    "NSE F&O-eligible list. Edit or replace it with your own symbols before "
-                    "relying on results."
-                ),
+                name=f"NSE — {label}",
+                symbols=BY_TIER[tier],
+                description=_STARTER_CAVEAT,
+                group_type="market_cap",
+                sector=tier,
                 is_default=True,
             )
+
+    for industry, symbols in BY_SECTOR.items():
+        if ("sector", industry) not in existing:
+            ScreenerUniverse.objects.create(
+                name=f"NSE — {industry}",
+                symbols=symbols,
+                description=_STARTER_CAVEAT,
+                group_type="sector",
+                sector=industry,
+                is_default=True,
+            )
+
+
+class UniverseListCreateView(APIView):
+    def get(self, request):
+        _seed_default_universes()
         universes = ScreenerUniverse.objects.all()
         return ok(ScreenerUniverseSerializer(universes, many=True).data)
 

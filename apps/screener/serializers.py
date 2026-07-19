@@ -10,7 +10,7 @@ class ScreenerUniverseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScreenerUniverse
-        fields = ["id", "name", "symbols", "symbol_count", "description", "is_default", "created_at", "updated_at"]
+        fields = ["id", "name", "symbols", "symbol_count", "description", "sector", "group_type", "is_default", "created_at", "updated_at"]
 
     def get_symbol_count(self, obj):
         return len(obj.symbols or [])
@@ -20,6 +20,7 @@ class ScreenerUniverseCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
     symbols = serializers.ListField(child=serializers.CharField())
     description = serializers.CharField(required=False, allow_blank=True, default="")
+    sector = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
 
     def validate_symbols(self, value):
         normalized = normalize_symbols(value)
@@ -32,6 +33,7 @@ class ScreenerUniverseUpdateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255, required=False)
     symbols = serializers.ListField(child=serializers.CharField(), required=False)
     description = serializers.CharField(required=False, allow_blank=True)
+    sector = serializers.CharField(max_length=100, required=False, allow_blank=True)
 
     def validate_symbols(self, value):
         normalized = normalize_symbols(value)

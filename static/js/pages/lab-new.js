@@ -1,6 +1,7 @@
 // lab-new.js — create a new parameter-sweep lab run
 const LabNewPage = {
   _strategies: [],
+  _universes: [],
   _strategy: null,
   _tunables: [],
   _symbols: [],
@@ -11,6 +12,7 @@ const LabNewPage = {
     this._strategy = null;
     this._tunables = [];
     this._symbols = [];
+    this._universes = [];
 
     container.innerHTML = `
       <div class="page-enter" style="max-width:760px;margin:0 auto;">
@@ -37,7 +39,13 @@ const LabNewPage = {
           </div>
 
           <div style="margin-bottom:16px;">
-            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">Symbols <span style="opacity:.6;">(as many as you like)</span></label>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label style="font-size:12px;color:var(--text-muted);">Symbols <span style="opacity:.6;">(as many as you like)</span></label>
+              <button type="button" class="btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="LabNewPage._clearSymbols()">Clear</button>
+            </div>
+            <select class="input-base" id="lab-universe-picker" style="font-size:12px;padding:7px 10px;margin-bottom:8px;" onchange="LabNewPage._loadUniverseSymbols(this.value)">
+              ${UniversePicker.optionsHtml(this._universes)}
+            </select>
             <div id="symbol-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;"></div>
             <input class="input-base" id="symbol-input" placeholder="Add symbol (press Enter)" style="font-size:13px;padding:9px 12px;"
               onkeydown="LabNewPage._onSymbolKey(event)" oninput="LabNewPage._updateCount()" />
@@ -95,8 +103,14 @@ const LabNewPage = {
     `;
 
     try {
-      const strategies = (await API.getStrategies()).filter(s => s.script_status === 'generated');
+      const [allStrategies, universes] = await Promise.all([API.getStrategies(), UniversePicker.fetch()]);
+      const strategies = allStrategies.filter(s => s.script_status === 'generated');
       this._strategies = strategies;
+      this._universes = universes;
+
+      const uniSelect = document.getElementById('lab-universe-picker');
+      if (uniSelect) uniSelect.innerHTML = UniversePicker.optionsHtml(universes);
+
       const select = document.getElementById('lab-strategy');
       if (!strategies.length) {
         select.innerHTML = `<option value="">No generated strategies available</option>`;
@@ -254,6 +268,32 @@ const LabNewPage = {
     this._symbols = this._symbols.filter(s => s !== sym);
     this._renderSymbolTags();
     this._updateCount();
+  },
+
+  async _loadUniverseSymbols(universeId) {
+    if (!universeId) return;
+    const universe = UniversePicker.find(this._universes, universeId);
+    if (!universe) return;
+    const provider = await UniversePicker.getEffectiveProvider();
+    const symbols = UniversePicker.adaptSymbols(universe.symbols, provider);
+    let added = 0;
+    for (const sym of symbols) {
+      if (!this._symbols.includes(sym)) { this._symbols.push(sym); added++; }
+    }
+    this._renderSymbolTags();
+    this._updateCount();
+    const picker = document.getElementById('lab-universe-picker');
+    if (picker) picker.value = '';
+    Toast.success(`Added ${added} symbol(s) from ${universe.name}`);
+  },
+
+  _clearSymbols() {
+    if (!this._symbols.length) return;
+    this._symbols = [];
+    this._renderSymbolTags();
+    this._updateCount();
+    const input = document.getElementById('symbol-input');
+    if (input) input.value = '';
   },
 
   async _submit() {

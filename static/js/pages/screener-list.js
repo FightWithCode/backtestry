@@ -229,7 +229,10 @@ const ScreenerListPage = {
           <input class="input-base" id="uni-description" value="${universe ? (universe.description || '').replace(/"/g, '&quot;') : ''}" style="font-size:13px;padding:7px 10px;" />
         </div>
         <div style="margin-bottom:12px;">
-          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Symbols <span style="opacity:.6;">(comma or newline separated — .NS added automatically)</span></label>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <label style="font-size:12px;color:var(--text-muted);">Symbols <span style="opacity:.6;">(comma or newline separated — bare NSE symbols, e.g. RELIANCE; a trailing .NS/.BO is stripped automatically)</span></label>
+            <button type="button" class="btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="document.getElementById('uni-symbols').value=''">Clear</button>
+          </div>
           <textarea class="input-base" id="uni-symbols" rows="6" style="font-size:12px;font-family:monospace;padding:8px 10px;">${universe ? universe.symbols.join('\n') : ''}</textarea>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;">

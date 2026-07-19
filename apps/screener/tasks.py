@@ -10,6 +10,15 @@ from apps.backtests.tasks import _fetch_ohlcv, _parse_symbols
 logger = logging.getLogger(__name__)
 
 
+def _adapt_symbol_for_provider(symbol: str, provider: str) -> str:
+    """Universes store bare NSE symbols (e.g. "RELIANCE") — Upstox's API already
+    treats a bare symbol as NSE by default (see upstox_client.resolve_instrument_key),
+    but yfinance needs the explicit ".NS" suffix to resolve the right exchange."""
+    if provider == "yfinance" and "." not in symbol:
+        return f"{symbol}.NS"
+    return symbol
+
+
 @shared_task(bind=True, max_retries=0)
 def run_screener_task(self, screener_run_id: str):
     """
@@ -32,29 +41,33 @@ def run_screener_task(self, screener_run_id: str):
     run.status = "running"
     run.save(update_fields=["status"])
 
+    from apps.appsettings.models import get_data_provider
+    provider = get_data_provider().lower()
+
     symbols = _parse_symbols(run.symbols)
     interval = resolve_timeframe(run.timeframe or run.strategy.timeframe)
     start_date = run.as_of_date - datetime.timedelta(days=run.lookback_days)
 
     logger.info(
-        "ScreenerRun %s - strategy='%s' symbols=%d as_of=%s interval=%s",
-        screener_run_id, run.strategy.name, len(symbols), run.as_of_date, interval,
+        "ScreenerRun %s - strategy='%s' symbols=%d as_of=%s interval=%s provider=%s",
+        screener_run_id, run.strategy.name, len(symbols), run.as_of_date, interval, provider,
     )
 
     scanned, found, failed = 0, 0, []
 
     try:
         for symbol in symbols:
+            fetch_symbol = _adapt_symbol_for_provider(symbol, provider)
             try:
-                df = _fetch_ohlcv(symbol, start_date, run.as_of_date, interval)
-                signals = scan_symbol(df, run.base_config, symbol)
+                df = _fetch_ohlcv(fetch_symbol, start_date, run.as_of_date, interval)
+                signals = scan_symbol(df, run.base_config, fetch_symbol)
                 scanned += 1
                 for sig in signals:
                     ScreenerSignal.objects.create(run=run, **sig)
                     found += 1
             except Exception:
-                logger.exception("[%s] screener scan failed - skipping", symbol)
-                failed.append(symbol)
+                logger.exception("[%s] screener scan failed - skipping", fetch_symbol)
+                failed.append(fetch_symbol)
 
         if scanned == 0 and failed:
             raise RuntimeError(f"All {len(failed)} symbol(s) failed to scan: {failed[:10]}")

@@ -4,12 +4,14 @@ const StrategyDetailPage = {
   _activeTab: 'overview',
   _pollInterval: null,
   _symbols: [],
+  _universes: [],
 
   async render(container, params) {
     const id = params.id;
     this._cleanup();
     this._activeTab = 'overview';
     this._symbols = [];
+    this._universes = [];
 
     container.innerHTML = `
       <div class="page-enter">
@@ -28,7 +30,9 @@ const StrategyDetailPage = {
     `;
 
     try {
-      this._strategy = await API.getStrategy(id);
+      const [strategy, universes] = await Promise.all([API.getStrategy(id), UniversePicker.fetch()]);
+      this._strategy = strategy;
+      this._universes = universes;
       this._renderFull(container);
     } catch (e) {
       Toast.error('Failed to load strategy: ' + e.message);
@@ -284,7 +288,13 @@ const StrategyDetailPage = {
         </div>
 
         <div style="margin-bottom:12px;">
-          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px;">Symbols</label>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label style="font-size:12px;color:var(--text-muted);">Symbols</label>
+            <button type="button" class="btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="StrategyDetailPage._clearSymbols()" ${disabled ? 'disabled' : ''}>Clear</button>
+          </div>
+          <select class="input-base" id="bt-universe-picker" style="font-size:12px;padding:7px 10px;margin-bottom:8px;" onchange="StrategyDetailPage._loadUniverseSymbols(this.value)" ${disabled ? 'disabled' : ''}>
+            ${UniversePicker.optionsHtml(this._universes)}
+          </select>
           <div id="symbol-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;"></div>
           <input class="input-base" id="symbol-input" placeholder="Add symbol (press Enter)" style="font-size:13px;padding:8px 12px;"
             onkeydown="StrategyDetailPage._onSymbolKey(event)" ${disabled ? 'disabled' : ''} />
@@ -361,6 +371,30 @@ const StrategyDetailPage = {
   _removeSymbol(sym) {
     this._symbols = this._symbols.filter(s => s !== sym);
     this._renderSymbolTags();
+  },
+
+  async _loadUniverseSymbols(universeId) {
+    if (!universeId) return;
+    const universe = UniversePicker.find(this._universes, universeId);
+    if (!universe) return;
+    const provider = await UniversePicker.getEffectiveProvider();
+    const symbols = UniversePicker.adaptSymbols(universe.symbols, provider);
+    let added = 0;
+    for (const sym of symbols) {
+      if (!this._symbols.includes(sym)) { this._symbols.push(sym); added++; }
+    }
+    this._renderSymbolTags();
+    const picker = document.getElementById('bt-universe-picker');
+    if (picker) picker.value = '';
+    Toast.success(`Added ${added} symbol(s) from ${universe.name}`);
+  },
+
+  _clearSymbols() {
+    if (!this._symbols.length) return;
+    this._symbols = [];
+    this._renderSymbolTags();
+    const input = document.getElementById('symbol-input');
+    if (input) input.value = '';
   },
 
   async _runBacktest() {
