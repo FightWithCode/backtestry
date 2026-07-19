@@ -13,6 +13,9 @@ const ROUTES = [
   { pattern: /^\/screener\/new$/, page: ScreenerNewPage },
   { pattern: /^\/screener\/([a-f0-9-]{36})$/, page: ScreenerResultsPage, paramKey: 'id' },
   { pattern: /^\/screener\/?$/, page: ScreenerListPage },
+  { pattern: /^\/simulator\/new$/, page: SimulatorNewPage },
+  { pattern: /^\/simulator\/([a-f0-9-]{36})$/, page: SimulatorResultsPage, paramKey: 'id' },
+  { pattern: /^\/simulator\/?$/, page: SimulatorListPage },
   { pattern: /^\/settings\/?$/, page: SettingsPage },
 ];
 

@@ -6,13 +6,6 @@ const ScreenerResultsPage = {
   _directionFilter: 'all',
   _detailOverlay: null,
 
-  _opLabels: {
-    gt: '>', lt: '<', gte: '≥', lte: '≤', eq: '=', neq: '≠',
-    add: '+', sub: '−', mul: '×', div: '÷',
-    crosses_above: 'crosses above', crosses_below: 'crosses below',
-    prev: 'prev', rising: 'rising', falling: 'falling',
-  },
-
   async render(container, params) {
     const id = params.id;
     this._cleanup();
@@ -213,52 +206,6 @@ const ScreenerResultsPage = {
     `;
   },
 
-  _renderExplainNode(node) {
-    if (!node) return '';
-    if (node.kind === 'literal') return `<span style="color:#94a3b8;">${node.value}</span>`;
-    if (node.kind === 'ref') return `<span style="color:#818cf8;font-weight:600;">${node.ref}</span><span style="color:var(--text-muted);">(${node.value})</span>`;
-
-    if (node.kind === 'comparison' || node.kind === 'arithmetic' || node.kind === 'cross' || node.kind === 'lookback') {
-      const opLabel = ScreenerResultsPage._opLabels[node.op] || node.op;
-      const isBoolNode = node.kind === 'comparison' || node.kind === 'cross';
-      const icon = isBoolNode ? (node.result ? '✓' : '✗') : '';
-      const iconColor = node.result ? '#10b981' : '#ef4444';
-      if (node.kind === 'lookback') {
-        return `<span style="display:inline-flex;align-items:center;gap:5px;">
-          <span style="color:var(--text-muted);">${opLabel}(</span>${ScreenerResultsPage._renderExplainNode(node.inner)}<span style="color:var(--text-muted);">) = ${node.result}</span>
-        </span>`;
-      }
-      return `<span style="display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;">
-        ${icon ? `<span style="color:${iconColor};font-weight:700;">${icon}</span>` : ''}
-        ${ScreenerResultsPage._renderExplainNode(node.left)}
-        <span style="color:var(--text-muted);font-weight:600;">${opLabel}</span>
-        ${ScreenerResultsPage._renderExplainNode(node.right)}
-        ${!isBoolNode ? `<span style="color:var(--text-muted);">= ${node.result}</span>` : ''}
-      </span>`;
-    }
-
-    if (node.kind === 'logic') {
-      const iconColor = node.result ? '#10b981' : '#ef4444';
-      if (node.op === 'not') {
-        return `<div style="display:flex;align-items:center;gap:6px;">
-          <span style="color:${iconColor};font-weight:700;">${node.result ? '✓' : '✗'}</span>
-          <span style="color:var(--text-muted);font-weight:600;">NOT</span>
-          ${ScreenerResultsPage._renderExplainNode(node.children[0])}
-        </div>`;
-      }
-      return `
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-          <span style="color:${iconColor};font-weight:700;">${node.result ? '✓' : '✗'}</span>
-          <span style="color:var(--text-muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;">${node.op}</span>
-        </div>
-        <div style="padding-left:18px;border-left:2px solid var(--border);display:flex;flex-direction:column;gap:6px;">
-          ${node.children.map(c => `<div>${ScreenerResultsPage._renderExplainNode(c)}</div>`).join('')}
-        </div>
-      `;
-    }
-    return '';
-  },
-
   _openDetail(signalId) {
     const sig = (this._run.signals || []).find(s => String(s.id) === String(signalId));
     if (!sig) return;
@@ -329,11 +276,11 @@ const ScreenerResultsPage = {
         <div>
           <h4 style="font-size:13px;font-weight:600;margin-bottom:10px;">Why This Qualified</h4>
           <div class="card" style="padding:16px;background:rgba(255,255,255,.02);font-size:13px;line-height:1.7;">
-            ${ScreenerResultsPage._renderExplainNode(sig.rule_explanation.when)}
+            ${RuleExplain.render(sig.rule_explanation.when)}
             ${sig.rule_explanation.guard ? `
               <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
                 <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Guard</div>
-                ${ScreenerResultsPage._renderExplainNode(sig.rule_explanation.guard)}
+                ${RuleExplain.render(sig.rule_explanation.guard)}
               </div>` : ''}
           </div>
         </div>

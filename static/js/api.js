@@ -90,4 +90,15 @@ const API = {
   getDataProviderSettings: () => _request('GET', '/api/settings/data-provider/'),
 
   updateDataProviderSettings: (data) => _request('PATCH', '/api/settings/data-provider/', data),
+
+  // Simulator (single-position, capital-compounding walk-forward across a universe)
+  createSimulatorRun: (data) => _request('POST', '/api/simulator/runs/', data),
+
+  getSimulatorRuns: () => _request('GET', '/api/simulator/runs/'),
+
+  getSimulatorRun: (id) => _request('GET', `/api/simulator/runs/${id}/`),
+
+  getSimulatorRunStatus: (id) => _request('GET', `/api/simulator/runs/${id}/status/`),
+
+  deleteSimulatorRun: (id) => _request('DELETE', `/api/simulator/runs/${id}/`),
 };

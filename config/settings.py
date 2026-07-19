@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.lab",
     "apps.screener",
     "apps.appsettings",
+    "apps.simulator",
 ]
 
 MIDDLEWARE = [

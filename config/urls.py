@@ -9,5 +9,6 @@ urlpatterns = [
     path("api/", include("apps.lab.urls")),
     path("api/", include("apps.screener.urls")),
     path("api/", include("apps.appsettings.urls")),
+    path("api/", include("apps.simulator.urls")),
     re_path(r"^(?!api/).*$", TemplateView.as_view(template_name="index.html")),
 ]

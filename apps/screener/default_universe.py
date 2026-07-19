@@ -282,7 +282,6 @@ NSE_UNIVERSE = {
     "AAVAS": {"name": "Aavas Financiers Ltd.", "industry": "Financial Services", "tier": "small"},
     "ACE": {"name": "Action Construction Equipment Ltd.", "industry": "Capital Goods", "tier": "small"},
     "ACUTAAS": {"name": "Acutaas Chemicals Ltd.", "industry": "Healthcare", "tier": "small"},
-    "ABFRL": {"name": "Aditya Birla Fashion and Retail Ltd.", "industry": "Consumer Services", "tier": "small"},
     "ABLBL": {"name": "Aditya Birla Lifestyle Brands Ltd.", "industry": "Consumer Services", "tier": "small"},
     "ABREL": {"name": "Aditya Birla Real Estate Ltd.", "industry": "Realty", "tier": "small"},
     "ABSLAMC": {"name": "Aditya Birla Sun Life AMC Ltd.", "industry": "Financial Services", "tier": "small"},
